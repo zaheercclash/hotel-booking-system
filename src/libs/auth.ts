@@ -24,6 +24,12 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === "development",
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
+    // ADD THIS REDIRECT CALLBACK - CRITICAL FOR OAUTH
+    async redirect({ url, baseUrl }) {
+      // Use the environment variable or fallback to baseUrl
+      return process.env.NEXTAUTH_URL || baseUrl;
+    },
+
     session: async ({ session, token }) => {
       const userEmail = token.email;
 

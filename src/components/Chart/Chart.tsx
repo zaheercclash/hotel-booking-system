@@ -20,10 +20,9 @@ const Chart: FC<{ userBookings: Booking[] }> = ({ userBookings }) => {
     (a, b) => b.totalPrice - a.totalPrice
   );
   const labels = sortedBookings.map((booking) => {
-    const roomName = booking.hotelRoom.name;
+    const roomName = booking.hotelRoom?.name || "Unknown Room";
     return roomName.length > 20 ? roomName.substring(0, 20) + "..." : roomName;
   });
-
   const amountSpent = sortedBookings.map((booking) => booking.totalPrice);
   const totalAmount = amountSpent.reduce((sum, amount) => sum + amount, 0);
 

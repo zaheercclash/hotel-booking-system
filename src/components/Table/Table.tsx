@@ -35,7 +35,10 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
     }
   };
 
-  if (bookingDetails.length === 0) {
+  // Filter out bookings without hotelRoom
+  const validBookings = bookingDetails.filter((booking) => booking.hotelRoom);
+
+  if (validBookings.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-200">
         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -56,7 +59,7 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           No Bookings Found
         </h3>
-        <p className="text-gray-500">You haven't made any bookings yet.</p>
+        <p className="text-gray-500">You haven&apos;t made any bookings yet.</p>
       </div>
     );
   }
@@ -69,16 +72,15 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
           <div>
             <h2 className="text-xl font-bold text-gray-900">Your Bookings</h2>
             <p className="text-gray-600 text-sm mt-1">
-              {bookingDetails.length} booking
-              {bookingDetails.length !== 1 ? "s" : ""} • Manage your
-              reservations
+              {validBookings.length} booking
+              {validBookings.length !== 1 ? "s" : ""} • Manage your reservations
             </p>
           </div>
           <div className="mt-2 sm:mt-0">
             <div className="bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
               <p className="text-blue-800 text-sm font-medium">
                 Total Bookings:{" "}
-                <span className="font-bold">{bookingDetails.length}</span>
+                <span className="font-bold">{validBookings.length}</span>
               </p>
             </div>
           </div>
@@ -108,7 +110,7 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {bookingDetails.map((booking) => {
+            {validBookings.map((booking) => {
               const daysLeft = calculateDaysLeft(booking.checkoutDate);
               const status = getStatusBadge(daysLeft);
 
@@ -127,12 +129,12 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
                         <button
                           onClick={() =>
                             router.push(
-                              `/rooms/${booking.hotelRoom.slug.current}`
+                              `/rooms/${booking.hotelRoom!.slug.current}`
                             )
                           }
                           className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors text-left"
                         >
-                          {booking.hotelRoom.name}
+                          {booking.hotelRoom!.name}
                         </button>
                         <p className="text-sm text-gray-500">
                           {booking.numberOfDays} nights
@@ -193,7 +195,7 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
                         )}
                       </div>
                       <p className="text-xs text-gray-500">
-                        LKR {booking.hotelRoom.price} per night
+                        LKR {booking.hotelRoom!.price} per night
                       </p>
                     </div>
                   </td>
@@ -218,7 +220,7 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
                   <td className="px-6 py-4">
                     <button
                       onClick={() => {
-                        setRoomId(booking.hotelRoom._id);
+                        setRoomId(booking.hotelRoom!._id);
                         toggleRatingModal();
                       }}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
@@ -242,7 +244,7 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
 
       {/* Mobile Cards */}
       <div className="lg:hidden space-y-4 p-4">
-        {bookingDetails.map((booking) => {
+        {validBookings.map((booking) => {
           const daysLeft = calculateDaysLeft(booking.checkoutDate);
           const status = getStatusBadge(daysLeft);
 
@@ -255,11 +257,11 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
               <div className="flex items-start justify-between mb-3">
                 <button
                   onClick={() =>
-                    router.push(`/rooms/${booking.hotelRoom.slug.current}`)
+                    router.push(`/rooms/${booking.hotelRoom!.slug.current}`)
                   }
                   className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors text-left"
                 >
-                  {booking.hotelRoom.name}
+                  {booking.hotelRoom!.name}
                 </button>
                 <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}
@@ -311,7 +313,7 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
               {/* Action Button */}
               <button
                 onClick={() => {
-                  setRoomId(booking.hotelRoom._id);
+                  setRoomId(booking.hotelRoom!._id);
                   toggleRatingModal();
                 }}
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"

@@ -24,50 +24,87 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === "development",
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    // ADD THIS REDIRECT CALLBACK - CRITICAL FOR OAUTH
+    async signIn({ user, account, profile }) {
+      console.log("🔍 SIGNIN DEBUG:", {
+        user: { id: user.id, email: user.email, name: user.name },
+        account: { provider: account?.provider, type: account?.type },
+        profile: { email: profile?.email, name: profile?.name },
+      });
+      return true;
+    },
+
     async redirect({ url, baseUrl }) {
-      // Use the environment variable or fallback to baseUrl
+      console.log("🔍 REDIRECT DEBUG:", {
+        url,
+        baseUrl,
+        nextauthUrl: process.env.NEXTAUTH_URL,
+      });
       return process.env.NEXTAUTH_URL || baseUrl;
     },
 
-    session: async ({ session, token }) => {
-      const userEmail = token.email;
+    async jwt({ token, user, account, profile }) {
+      console.log("🔍 JWT DEBUG:", { token, user, account, profile });
+      return token;
+    },
 
-      // FIX: Fetch user and handle draft/published documents
-      const userIdObj = await sanityClient.fetch<{ _id: string }>(
-        `*[_type == "user" && email == $email && !(_id in path("drafts.**"))][0] {
-            _id
-        }`,
-        { email: userEmail }
-      );
+    async session({ session, token }) {
+      try {
+        const userEmail = token.email;
+        console.log(
+          "🔍 SESSION DEBUG - Looking for user with email:",
+          userEmail
+        );
 
-      // If no published user found, try to find any user (including drafts)
-      let userId = userIdObj?._id;
-
-      if (!userId) {
-        const anyUser = await sanityClient.fetch<{ _id: string }>(
-          `*[_type == "user" && email == $email][0] {
-              _id
-          }`,
+        // First try to find published user
+        const userIdObj = await sanityClient.fetch<{ _id: string }>(
+          `*[_type == "user" && email == $email && !(_id in path("drafts.**"))][0] { _id }`,
           { email: userEmail }
         );
-        userId = anyUser?._id;
 
-        // Remove 'drafts.' prefix if it's a draft document
-        if (userId && userId.startsWith("drafts.")) {
-          userId = userId.replace("drafts.", "");
+        console.log("🔍 SESSION DEBUG - Published user found:", userIdObj);
+
+        let userId = userIdObj?._id;
+
+        // If no published user found, try to find any user (including drafts)
+        if (!userId) {
+          const anyUser = await sanityClient.fetch<{ _id: string }>(
+            `*[_type == "user" && email == $email][0] { _id }`,
+            { email: userEmail }
+          );
+          userId = anyUser?._id;
+          console.log("🔍 SESSION DEBUG - Any user found:", anyUser);
+
+          // Remove 'drafts.' prefix if it's a draft document
+          if (userId && userId.startsWith("drafts.")) {
+            userId = userId.replace("drafts.", "");
+            console.log("🔍 SESSION DEBUG - Cleaned user ID:", userId);
+          }
         }
+
+        console.log("🔍 SESSION DEBUG - Final user ID for session:", userId);
+
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            id: userId || token.sub, // Fallback to token.sub if no user ID found
+          },
+        };
+      } catch (error) {
+        console.error("🔍 SESSION ERROR:", error);
+        return session;
       }
-
-      console.log("🔍 AUTH DEBUG: User ID for session:", userId);
-
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: userId || token.sub, // Fallback to token.sub if no user ID found
-        },
-      };
+    },
+  },
+  events: {
+    async createUser({ user }) {
+      console.log("🔍 CREATE USER EVENT:", user);
+    },
+    async linkAccount({ user, account, profile }) {
+      console.log("🔍 LINK ACCOUNT EVENT:", { user, account, profile });
+    },
+    async signIn({ user, account, profile }) {
+      console.log("🔍 SIGNIN EVENT:", { user, account, profile });
     },
   },
 };
